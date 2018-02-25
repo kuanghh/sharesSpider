@@ -8,6 +8,7 @@
 from twisted.enterprise import adbapi
 import MySQLdb
 import MySQLdb.cursors
+import time
 
 
 class SharesspiderPipeline(object):
@@ -39,34 +40,42 @@ class SharesspiderPipeline(object):
         return item
 
     def insert(self, conn, item):
-        check_repet_sql = 'select * from tb_shares where shares_num=%s' % item['shares_num']  # 查重
-        conn.execute(check_repet_sql)
+        check_repeat_sql = 'select * from tb_shares where shares_num=%s' % item['shares_num']  # 查重
+        conn.execute(check_repeat_sql)
         result = conn.fetchone()  # 返回的是一个dict对象
 
         if result is None or len(result) == 0:
             sql = 'insert into tb_shares (id, shares_num, shares_name, shares_href, create_time) values(%s, %s, %s, %s, %s)'
             param = (item['id'], item['shares_num'], item['shares_name'], item['shares_href'], item['create_time'])
+            db_shares_id = item['id']
             conn.execute(sql, param)
+        else:
+            db_shares_id = result['id'].decode('utf-8')
 
         # 插入明细数据,也要判断时间是否重复
-        sql = "insert into tb_shares_detailed(id, shares_id, create_time, open_price, close_price, ceilling_price, floor_price, rise_and_fall_range, rise_and_fall_quota, volume, turn_volume, turnover_rate, amplitude, p_e_ratio, state) " \
-              "values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        check_repeat_sql = "select id from tb_shares_detailed where shares_id=%s and create_time=%s" % ('\'' + db_shares_id + '\'', '\'' + time.strftime("%Y-%m-%d", time.localtime()) + '\'')
+        conn.execute(check_repeat_sql)
+        result = conn.fetchone()  # 返回的是一个dict对象
 
-        param = (item['detailed_id'],
-                 item['shares_id'],
-                 item['create_time'],
-                 item['open_price'],
-                 item['close_price'],
-                 item['ceilling_price'],
-                 item['floor_price'],
-                 item['rise_and_fall_range'],
-                 item['rise_and_fall_quota'],
-                 item['volume'],
-                 item['turn_volume'],
-                 item['turnover_rate'],
-                 item['amplitude'],
-                 item['p_e_ratio'],
-                 item['state'])
+        if result is None or len(result) == 0:
+            sql = "insert into tb_shares_detailed(id, shares_id, create_time, open_price, close_price, ceilling_price, floor_price, rise_and_fall_range, rise_and_fall_quota, volume, turn_volume, turnover_rate, amplitude, p_e_ratio, state) " \
+                  "values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
-        conn.execute(sql, param)
+            param = (item['detailed_id'],
+                     item['shares_id'],
+                     item['create_time'],
+                     item['open_price'],
+                     item['close_price'],
+                     item['ceilling_price'],
+                     item['floor_price'],
+                     item['rise_and_fall_range'],
+                     item['rise_and_fall_quota'],
+                     item['volume'],
+                     item['turn_volume'],
+                     item['turnover_rate'],
+                     item['amplitude'],
+                     item['p_e_ratio'],
+                     item['state'])
+
+            conn.execute(sql, param)
 

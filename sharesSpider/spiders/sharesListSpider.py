@@ -11,11 +11,15 @@ class SharesListSpider(scrapy.Spider):
     # 爬虫名字
     name = "sharesList"
 
+    # 证券网站首页地址
+    shares_address = 'https://hq.gucheng.com'
+
     # 爬虫范围
     def start_requests(self):
         urls = [
-            # 'https://hq.gucheng.com/List.aspx?TypeId=3&sort=chg&d=1&page=1'  # 上证A股
-            'https://hq.gucheng.com/List.aspx?TypeId=2&sort=chg&d=1&page=23'  # 深证A股
+            # 'https://hq.gucheng.com/List.aspx?TypeId=3&sort=chg&d=1&page=1',  # 上证A股
+            # 'https://hq.gucheng.com/List.aspx?TypeId=2&sort=chg&d=1&page=1',  # 深证A股
+            'https://hq.gucheng.com/ListGN.aspx?TypeId=248&LZ=l&sort=chg&d=1&page=1',  # 次新股
         ]
 
         for url in urls:
@@ -39,7 +43,7 @@ class SharesListSpider(scrapy.Spider):
 
             shares_name = elem.xpath("//td[1]//a/text()")[0]  # 股票名字
             shares_num = elem.xpath("//td[2]//a/text()")[0]  # 股票代码
-            shares_href = 'https://hq.gucheng.com' + elem.xpath("//td[2]/a/@href")[0]  # 股票链接
+            shares_href = self.shares_address + elem.xpath("//td[2]/a/@href")[0]  # 股票链接
             new_price = elem.xpath("//td[3]/text()")[0]  # 最新价  # 可以当成收盘价
             rise_and_fall_range = elem.xpath("//td[4]/text()")[0]  # 涨跌幅 例如：0.31%，-0.97%
             rise_and_fall_quota = elem.xpath("//td[5]/text()")[0]  # 涨跌额 例如：-0.27，12.25
@@ -74,8 +78,21 @@ class SharesListSpider(scrapy.Spider):
             request = scrapy.Request(shares_href, meta={'item': item}, callback=self.paser_detailed)
             yield request
 
-        # todo 抓取下一页数据
+        # 获取下一页的地址信息，若class属性为stock_disable，则没有下一页
+        next_page_span = response.xpath("//div[@class='stock_page']/span")[-2]
+        next_page_address_arry = etree.HTML(next_page_span.extract()).xpath("//a/@href")
 
+        if len(next_page_address_arry) > 0:
+            # 拼装下一页地址
+            next_page_address = self.shares_address + next_page_address_arry[0]
+
+            # 继续爬虫下一页数据
+            request = scrapy.Request(next_page_address, callback=self.parse)
+            yield request
+
+        else:  # 没有下一页，则直接结束爬虫
+
+            return
 
 
 
