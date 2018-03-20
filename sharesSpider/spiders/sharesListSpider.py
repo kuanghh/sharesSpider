@@ -19,7 +19,8 @@ class SharesListSpider(scrapy.Spider):
         urls = [
             # 'https://hq.gucheng.com/List.aspx?TypeId=3&sort=chg&d=1&page=1',  # 上证A股
             # 'https://hq.gucheng.com/List.aspx?TypeId=2&sort=chg&d=1&page=1',  # 深证A股
-            'https://hq.gucheng.com/ListGN.aspx?TypeId=248&LZ=l&sort=chg&d=1&page=1',  # 次新股
+            'https://hq.gucheng.com/List.aspx?TypeId=1&sort=chg&d=1&page=1',    # 泸深A股
+            # 'https://hq.gucheng.com/ListGN.aspx?TypeId=248&LZ=l&sort=chg&d=1&page=1',  # 次新股
         ]
 
         for url in urls:
