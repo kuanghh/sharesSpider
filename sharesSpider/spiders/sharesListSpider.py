@@ -91,7 +91,7 @@ class SharesListSpider(scrapy.Spider):
             request = scrapy.Request(next_page_address, callback=self.parse)
             yield request
 
-        else:  # 没有下一页，则直接结束爬虫
+        else:  # 没有下一页，则直接结束爬虫(todo 在这里插入 完成记录)
 
             return
 
